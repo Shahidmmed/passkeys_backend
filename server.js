@@ -25,7 +25,16 @@ app.use(
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-app.use(session({ secret: "secret", resave: false, saveUninitialized: false }));
+app.use(
+  session({
+    secret: "secret",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 1000 * 60 * 60, // 1 hour in milliseconds
+    },
+  })
+);
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -115,12 +124,17 @@ app.post("/auth/login", (req, res, next) => {
           .status(500)
           .json({ status: "error", message: "Login failed" });
       }
+
+      const expires = req.session.cookie.expires
+        ? req.session.cookie.expires.toISOString()
+        : null;
+
       return res.status(200).json({
         status: "success",
         message: "Login successful",
         data: {
           token: user.token,
-          session: { id: req.sessionID, expires: req.session.cookie.expires },
+          session: { id: req.sessionID, expires: expires },
           user: { email: user.email, name: user.name },
         },
       });
